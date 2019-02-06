@@ -38,9 +38,14 @@ for x= 1:nrOfLines
     %Only need to go to 32? Since we're always it's a mirror reflection.
     for i=1:64
         for j= 1:2048
+            %Obtain the angle between the reflectionpoint and the element
             theta(j,i,x) = atand(distanceBetweenElements/focusDistace(j,x));
+            %Obtain the traveled Distance a^2+b^2 = c^2
             reflectedTravelDistance(j,i,x) = sqrt(distanceBetweenElements^2 + focusDistace(j,x)^2);
+            %Obtain the time it takes to travel the distance
             reflectedTravelTime(j,i,x) = reflectedTravelDistance(j,i,x) / preBeamformed.SoundVel;
+            %Obtain the number of samples it takes to travel the distance
+            %This is used later to know which samples we need to sum up.
             numberOfSamplesDelay(j,i,x) = round(reflectedTravelTime(j,i,x) /reflectedTravelTime(1,1,x))-j;
         end
         distanceBetweenElements = distanceBetweenElements + preBeamformed.Pitch;
@@ -53,7 +58,14 @@ for x= 1:nrOfLines
         for j = 1:64
            %Difference of how many elements there are     
            elementDiff = abs(j-32)+1;
+           %Obtain the number of samples it is delays, given how many
+           %elements away it is and what focustarget (timestep, samplestep)
+           %we are looking at.
            amountOfSampleDelay = numberOfSamplesDelay(i,elementDiff,x);
+           
+           %Catch if we try to get samples that are in the future, 
+           %aka the one we are still waiting for echo but we ended the
+           %sampling
            if(i+amountOfSampleDelay < 2049)
             sumSignal = sumSignal + elementDiff/16* signal(i+amountOfSampleDelay,j);
            end
