@@ -27,14 +27,18 @@ postRF_ImageA = PostRF;
 %%
 
 %Get all 64 channel signal for all lines.
-
+theta = zeros(2048,64,128);
+focusDistace = zeros(2048,128);
+reflectedTravelTime = zeros(2048,64,128);
+numberOfSamplesDelay = zeros(2048,64,128); 
+newSignal = zeros(2048,128);
 for x= 1:128
-    focusDistace = zeros(2048,x);
+   
     focusDistace(1,x) = preBeamformed.SoundVel/preBeamformed.SampleFreq;
     for i= 2:2048
         focusDistace(i,x) = focusDistace(i-1,x)+focusDistace(1,x);
     end
-    theta = zeros(2048,64,x);
+   
 
     distanceBetweenElements = 0;
     for i=1:64
@@ -54,21 +58,21 @@ for x= 1:128
         distanceBetweenElements = distanceBetweenElements + preBeamformed.Pitch;
     end
 
-    reflectedTravelTime = zeros(2048,64,x);
+    
     for i=1:64
         for j= 1:2048
             reflectedTravelTime(j,i,x) = reflectedTravelDistance(j,i,x) / preBeamformed.SoundVel;
         end
     end
 
-    numberOfSamplesDelay = zeros(2048,64,x); 
+    
     for i=1:64
         for j= 1:2048
             numberOfSamplesDelay(j,i,x) = round(reflectedTravelTime(j,i,x) /reflectedTravelTime(1,1,x))-j;
         end
     end
     signal = preBeamformed.Signal(:,:,x);
-    newSignal = zeros(2048,x);
+    
     for i=1:2048
         sumSignal = 0;
         for j = 1:64
@@ -79,6 +83,7 @@ for x= 1:128
             sumSignal = sumSignal + signal(i+amountOfSampleDelay,j);
            end
         end
+        %sumSignal        
         newSignal(i,x) = sumSignal;
 
     end
@@ -86,3 +91,10 @@ end
 figure
 plot(newSignal);
 title('Summed signal')
+%%
+newSignal_high = highpass(newSignal(:,:),0.3);
+figure
+plot(newSignal);
+title('Summed and highpassed signal')
+Image = abs(hilbert(newSignal)); %where the ?postbeamformed?-variable is already filtered
+figure; imagesc(Image); colormap(gray)
