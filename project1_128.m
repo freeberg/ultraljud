@@ -1,5 +1,5 @@
 clear all
-load PostRF_Carotid.mat
+%load PostRF_Carotid.mat
 
 postRF_Carotid = PostRF;
 
@@ -18,7 +18,7 @@ legend('y1','y30')
 %Avbilda en linje
 %64 linjer använder den sig av 2048*64 
 %Räkna ut gångvägar, tid och samplingsfrekvenser
-load preRF_ImageA.mat
+%load preRF_ImageA.mat
 postRF_ImageA = PostRF;
 %plot(postRF_ImageA.Signal(:,1))
 %Varje punkt summering av 64 
@@ -27,18 +27,19 @@ postRF_ImageA = PostRF;
 %%
 
 %Get all 64 channel signal for all lines.
-theta = zeros(2048,64,128);
-focusDistace = zeros(2048,128);
-reflectedTravelTime = zeros(2048,64,128);
-numberOfSamplesDelay = zeros(2048,64,128); 
-newSignal = zeros(2048,128);
-for x= 1:128
+load preRF_ImageB.mat
+nrOfLines = 128;
+theta = zeros(2048,64,nrOfLines);
+focusDistace = zeros(2048,nrOfLines);
+reflectedTravelTime = zeros(2048,64,nrOfLines);
+numberOfSamplesDelay = zeros(2048,64,nrOfLines); 
+newSignal = zeros(2048,nrOfLines);
+for x= 1:nrOfLines
    
     focusDistace(1,x) = preBeamformed.SoundVel/preBeamformed.SampleFreq;
     for i= 2:2048
         focusDistace(i,x) = focusDistace(i-1,x)+focusDistace(1,x);
     end
-   
 
     distanceBetweenElements = 0;
     for i=1:64
@@ -80,7 +81,7 @@ for x= 1:128
            elementDiff = abs(j-32)+1;
            amountOfSampleDelay = numberOfSamplesDelay(i,elementDiff,x);
            if(i+amountOfSampleDelay < 2049)
-            sumSignal = sumSignal + signal(i+amountOfSampleDelay,j);
+            sumSignal = sumSignal + elementDiff/32* signal(i+amountOfSampleDelay,j);
            end
         end
         %sumSignal        
@@ -88,13 +89,21 @@ for x= 1:128
 
     end
 end
+%%
 figure
 plot(newSignal);
 title('Summed signal')
-%%
-newSignal_high = highpass(newSignal(:,:),0.3);
+newSignal_cut = newSignal(200:end,:);
+newSignal_high = highpass(newSignal_cut,0.25);
 figure
-plot(newSignal);
+plot(newSignal_high);
 title('Summed and highpassed signal')
-Image = abs(hilbert(newSignal)); %where the ?postbeamformed?-variable is already filtered
+Image = abs(hilbert(newSignal_high)); %where the ?postbeamformed?-variable is already filtered
 figure; imagesc(Image); colormap(gray)
+
+%%
+%One line
+Image = abs(hilbert(newSignal_high(:,1:10))); %where the ?postbeamformed?-variable is already filtered
+figure; imagesc(Image); colormap(gray)
+%%
+
